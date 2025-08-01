@@ -1,26 +1,19 @@
 {% extends "base.html" %}
+
 {% block title %}Registrar Pago{% endblock %}
+
 {% block content %}
-<h2 class="mb-4">💰 Registrar Pago</h2>
-<form method="post">
-    <div class="mb-3">
-        <label class="form-label">Cliente</label>
-        <select name="cedula" class="form-select" required>
-            {% for cedula, nombre in clientes %}
-            <option value="{{ cedula }}">{{ nombre }} - {{ cedula }}</option>
-            {% endfor %}
-        </select>
-    </div>
-    <div class="mb-3">
-        <input name="monto" class="form-control" placeholder="Monto del pago" type="number" step="0.01" required>
-    </div>
-    <div class="mb-3">
-        <select name="tipo" class="form-select" required>
-            <option value="Semanal">Semanal</option>
-            <option value="Quincenal">Quincenal</option>
-            <option value="Mensual">Mensual</option>
-        </select>
-    </div>
-    <button class="btn btn-success w-100">Registrar Pago</button>
+<h1>Registrar Pago para Cliente ID {{ cliente_id }}</h1>
+
+<form method="POST" action="{{ url_for('registrar_pago', cliente_id=cliente_id) }}">
+  <div class="mb-3">
+    <label for="fecha" class="form-label">Fecha</label>
+    <input type="date" class="form-control" id="fecha" name="fecha" required>
+  </div>
+  <div class="mb-3">
+    <label for="monto" class="form-label">Monto (Gs.)</label>
+    <input type="number" step="0.01" class="form-control" id="monto" name="monto" required>
+  </div>
+  <button type="submit" class="btn btn-primary">Registrar Pago</button>
 </form>
 {% endblock %}
