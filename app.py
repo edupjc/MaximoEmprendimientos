@@ -1,149 +1,109 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for
+import os
 import sqlite3
 from datetime import datetime
 
 app = Flask(__name__)
-app.secret_key = 'clave-secreta'
 
-DB = 'database.db'
+# Conexión a la base de datos
+def get_db_connection():
+    conn = sqlite3.connect('clientes.db')
+    conn.row_factory = sqlite3.Row
+    return conn
 
-# 🔧 Inicializa las tablas si no existen
-def init_db():
-    with sqlite3.connect(DB) as conn:
-        cursor = conn.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS clientes (
-                cedula TEXT PRIMARY KEY,
-                nombre TEXT,
-                apellido TEXT,
-                direccion TEXT,
-                telefono TEXT,
-                deuda_total REAL
-            )
-        ''')
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS pagos (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                cedula TEXT,
-                fecha TEXT,
-                monto REAL,
-                tipo TEXT,
-                FOREIGN KEY (cedula) REFERENCES clientes(cedula)
-            )
-        ''')
+# Crear tablas si no existen
+def crear_tablas():
+    conn = get_db_connection()
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS clientes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT NOT NULL,
+            telefono TEXT,
+            deuda_total REAL DEFAULT 0
+        )
+    ''')
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS pagos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cliente_id INTEGER,
+            monto REAL,
+            fecha TEXT,
+            forma_pago TEXT,
+            FOREIGN KEY(cliente_id) REFERENCES clientes(id)
+        )
+    ''')
+    conn.commit()
+    conn.close()
 
-# 🏠 Página de inicio
+crear_tablas()
+
+# Ruta principal
 @app.route('/')
 def index():
     return render_template('index.html')
 
-# 📋 Lista de clientes (acepta /clientes y /clientes/)
-@app.route('/clientes/')
+# Ver clientes
 @app.route('/clientes')
 def clientes():
-    conn = sqlite3.connect(DB)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM clientes")
-    lista = cursor.fetchall()
+    conn = get_db_connection()
+    clientes = conn.execute('SELECT * FROM clientes').fetchall()
     conn.close()
-    return render_template('clientes.html', clientes=lista)
+    return render_template('clientes.html', clientes=clientes)
 
-# ➕ Agregar cliente
-@app.route('/agregar/', methods=['GET', 'POST'])
-@app.route('/agregar', methods=['GET', 'POST'])
-def agregar():
+# Registrar cliente nuevo
+@app.route('/registrar_cliente', methods=['GET', 'POST'])
+def registrar_cliente():
     if request.method == 'POST':
-        data = (
-            request.form['cedula'],
-            request.form['nombre'].title(),
-            request.form['apellido'].title(),
-            request.form['direccion'],
-            request.form['telefono'],
-            float(request.form['deuda']),
-        )
-        try:
-            with sqlite3.connect(DB) as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    INSERT INTO clientes (cedula, nombre, apellido, direccion, telefono, deuda_total)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                ''', data)
-                flash("✅ Cliente agregado correctamente", "success")
-        except sqlite3.IntegrityError:
-            flash("❌ Ya existe un cliente con esa cédula", "danger")
-        return redirect(url_for('clientes'))
-    return render_template('agregar_cliente.html')
+        nombre = request.form['nombre']
+        telefono = request.form['telefono']
+        deuda = float(request.form['deuda'])
 
-# 💰 Registrar pago
-@app.route('/pago/', methods=['GET', 'POST'])
-@app.route('/pago', methods=['GET', 'POST'])
-def pago():
-    conn = sqlite3.connect(DB)
-    cursor = conn.cursor()
-    cursor.execute("SELECT cedula, nombre || ' ' || apellido FROM clientes")
-    clientes = cursor.fetchall()
-    
-    if request.method == 'POST':
-        cedula = request.form['cedula']
-        monto = float(request.form['monto'])
-        tipo = request.form['tipo']
-        fecha = datetime.now().strftime("%Y-%m-%d")
-        
-        cursor.execute("SELECT deuda_total FROM clientes WHERE cedula = ?", (cedula,))
-        resultado = cursor.fetchone()
-
-        if not resultado:
-            flash("❌ Cliente no encontrado", "danger")
-            return redirect(url_for('pago'))
-
-        deuda_actual = resultado[0]
-        if monto > deuda_actual:
-            monto = deuda_actual
-
-        # Insertar el pago
-        cursor.execute('''
-            INSERT INTO pagos (cedula, fecha, monto, tipo)
-            VALUES (?, ?, ?, ?)
-        ''', (cedula, fecha, monto, tipo))
-
-        # Actualizar deuda
-        cursor.execute("UPDATE clientes SET deuda_total = ? WHERE cedula = ?", (deuda_actual - monto, cedula))
+        conn = get_db_connection()
+        conn.execute('INSERT INTO clientes (nombre, telefono, deuda_total) VALUES (?, ?, ?)',
+                     (nombre, telefono, deuda))
         conn.commit()
         conn.close()
+        return redirect(url_for('clientes'))
 
-        flash("💰 Pago registrado correctamente", "success")
+    return render_template('registrar_cliente.html')
+
+# Registrar pago
+@app.route('/registrar_pago', methods=['GET', 'POST'])
+def registrar_pago():
+    conn = get_db_connection()
+    clientes = conn.execute('SELECT * FROM clientes').fetchall()
+
+    if request.method == 'POST':
+        cliente_id = request.form['cliente_id']
+        monto = float(request.form['monto'])
+        forma_pago = request.form['forma_pago']
+        fecha = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        conn.execute('INSERT INTO pagos (cliente_id, monto, fecha, forma_pago) VALUES (?, ?, ?, ?)',
+                     (cliente_id, monto, fecha, forma_pago))
+        conn.execute('UPDATE clientes SET deuda_total = deuda_total - ? WHERE id = ?',
+                     (monto, cliente_id))
+        conn.commit()
+        conn.close()
         return redirect(url_for('clientes'))
 
     conn.close()
     return render_template('registrar_pago.html', clientes=clientes)
 
-# 📄 Informe de pagos por cliente
-@app.route('/informe/', methods=['GET', 'POST'])
-@app.route('/informe', methods=['GET', 'POST'])
-def informe():
-    pagos = []
-    cliente = None
-    if request.method == 'POST':
-        cedula = request.form['cedula']
-        conn = sqlite3.connect(DB)
-        cursor = conn.cursor()
+# Informe de pagos
+@app.route('/informe_pagos')
+def informe_pagos():
+    conn = get_db_connection()
+    pagos = conn.execute('''
+        SELECT p.*, c.nombre 
+        FROM pagos p
+        JOIN clientes c ON p.cliente_id = c.id
+        ORDER BY p.fecha DESC
+    ''').fetchall()
+    conn.close()
+    return render_template('informe_pagos.html', pagos=pagos)
 
-        cursor.execute("SELECT nombre, apellido, deuda_total FROM clientes WHERE cedula = ?", (cedula,))
-        cliente = cursor.fetchone()
-
-        if not cliente:
-            flash("❌ Cliente no encontrado", "danger")
-        else:
-            cursor.execute("SELECT fecha, monto, tipo FROM pagos WHERE cedula = ? ORDER BY fecha", (cedula,))
-            pagos = cursor.fetchall()
-
-        conn.close()
-    return render_template('informe_pagos.html', cliente=cliente, pagos=pagos)
-
-# 🚀 Iniciar aplicación
-import os
-
+# Iniciar app con configuración para Render
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
-
