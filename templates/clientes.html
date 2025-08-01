@@ -1,20 +1,16 @@
 {% extends "base.html" %}
 
-{% block title %}Lista de Clientes{% endblock %}
-
 {% block content %}
-<h1>Lista de Clientes</h1>
+<h2>Lista de Clientes</h2>
 
-<table class="table table-striped table-bordered">
-    <thead class="table-primary">
+{% if clientes %}
+<table>
+    <thead>
         <tr>
             <th>ID</th>
             <th>Nombre</th>
-            <th>Cédula</th>
-            <th>Teléfono</th>
-            <th>Dirección</th>
-            <th>Deuda Total (Gs.)</th>
-            <th>Acciones</th>
+            <th>Deuda</th>
+            <th>Frecuencia de Pago</th>
         </tr>
     </thead>
     <tbody>
@@ -24,18 +20,11 @@
             <td>{{ cliente[1] }}</td>
             <td>{{ cliente[2] }}</td>
             <td>{{ cliente[3] }}</td>
-            <td>{{ cliente[4] }}</td>
-            <td>{{ "%.2f"|format(cliente[5]) }}</td>
-            <td>
-                <a href="{{ url_for('registrar_pago', cliente_id=cliente[0]) }}" class="btn btn-success btn-sm">Registrar Pago</a>
-                <a href="{{ url_for('informe_pagos', cliente_id=cliente[0]) }}" class="btn btn-info btn-sm">Informe de Pagos</a>
-            </td>
-        </tr>
-        {% else %}
-        <tr>
-            <td colspan="7" class="text-center">No hay clientes registrados.</td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+{% else %}
+<p>No hay clientes registrados.</p>
+{% endif %}
 {% endblock %}
