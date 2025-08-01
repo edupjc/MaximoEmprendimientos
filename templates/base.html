@@ -10,15 +10,20 @@
         <h1>Máximo Emprendimientos</h1>
         <nav>
             <ul>
-                <li><a href="{{ url_for('index') }}">Clientes</a></li>
+                <li><a href="{{ url_for('index') }}">Inicio</a></li>
+                <li><a href="{{ url_for('mostrar_clientes') }}">Clientes</a></li>
                 <li><a href="{{ url_for('registrar_cliente') }}">Agregar Cliente</a></li>
+                <!-- Enlace eliminado porque requiere cliente_id:
+                <li><a href="{{ url_for('registrar_pago') }}">Registrar Pago</a></li>
+                -->
                 <li><a href="{{ url_for('informe_pagos') }}">Informe de Pagos</a></li>
             </ul>
         </nav>
     </header>
-
+    
     <main>
-        {% block content %}{% endblock %}
+        {% block content %}
+        {% endblock %}
     </main>
 
     <footer>
