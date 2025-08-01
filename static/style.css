@@ -1,0 +1,46 @@
+@media print {
+    /* Ocultar todo lo que no sea el informe */
+    nav, .d-print-none, .btn, form {
+        display: none !important;
+    }
+
+    /* Ajuste del cuerpo para impresora térmica */
+    body {
+        font-size: 16px;
+        line-height: 1.4;
+        color: #000;
+        background: #fff !important;
+        margin: 0;
+        padding: 0;
+    }
+
+    #informe {
+        width: 100%;
+        padding: 0;
+        margin: 0;
+        box-shadow: none;
+        border: none;
+    }
+
+    #informe h5, #informe p {
+        font-size: 16px;
+        margin: 2px 0;
+    }
+
+    ul.list-group {
+        padding: 0;
+        list-style-type: none;
+    }
+
+    ul.list-group li {
+        padding: 0;
+        border: none;
+        font-size: 14px;
+        border-bottom: 1px dashed #000;
+    }
+
+    /* Eliminar espacios entre líneas innecesarios */
+    hr {
+        display: none;
+    }
+}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Clientes{% endblock %}
+{% block content %}
+<h2 class="mb-4">📋 Lista de Clientes</h2>
+{% if clientes %}
+<table class="table table-striped table-bordered">
+    <thead class="table-dark">
+        <tr>
+            <th>Cédula</th>
+            <th>Nombre</th>
+            <th>Dirección</th>
+            <th>Teléfono</th>
+            <th>Deuda Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for c in clientes %}
+        <tr>
+            <td>{{ c[0] }}</td>
+            <td>{{ c[1] }} {{ c[2] }}</td>
+            <td>{{ c[3] }}</td>
+            <td>{{ c[4] }}</td>
+            <td>{{ "%.2f"|format(c[5]) }} Gs.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="alert alert-warning">⚠️ No hay clientes registrados.</p>
+{% endif %}
+{% endblock %}

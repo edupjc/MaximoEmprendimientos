@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Informe de Pagos{% endblock %}
+{% block content %}
+<h2 class="mb-4">📄 Informe de Pagos</h2>
+
+<form method="post" class="mb-4">
+    <input name="cedula" class="form-control" placeholder="Cédula del cliente" required>
+    <button class="btn btn-secondary mt-2">Ver Informe</button>
+</form>
+
+{% if cliente %}
+<div id="informe" class="card shadow">
+    <div class="card-body">
+        <h5>🧑 Cliente: {{ cliente[0] }} {{ cliente[1] }}</h5>
+        <p>🆔 Cédula: {{ request.form['cedula'] }}</p>
+        <p>💰 Deuda Actual: {{ "%.2f"|format(cliente[2]) }} Gs.</p>
+        <hr>
+        {% if pagos %}
+            <ul class="list-group">
+                {% for pago in pagos %}
+                <li class="list-group-item">
+                    Fecha: {{ pago[0] }} | Monto: {{ "%.2f"|format(pago[1]) }} Gs. | Tipo: {{ pago[2] }}
+                </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-muted">No hay pagos registrados.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 🖨️ Botón de impresión -->
+<div class="mt-3 text-end d-print-none">
+    <button class="btn btn-outline-dark" onclick="window.print()">
+        🖨️ Imprimir informe
+    </button>
+</div>
+{% endif %}
+
+{% endblock %}
